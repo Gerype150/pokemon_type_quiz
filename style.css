@@ -1,0 +1,58 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .container {
+    text-align: center;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+  }
+  h1 {
+    color: #ffcc00;
+    font-size: 2rem;
+  }
+  .hidden {
+    display: none;
+  }
+  button {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px; /* Adjusted padding for smaller buttons */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .options button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 5px auto;
+    width: calc(50% - 20px); /* Ensure buttons are the same width */
+    text-transform: capitalize; /* Capitalize the first letter */
+    padding: 8px; /* Adjusted padding for smaller buttons */
+    box-sizing: border-box; /* Include padding in the element's total width and height */
+  }
+  .options button img {
+    margin-right: 10px; /* Space between icon and text */
+    margin-left: 10px;
+    width: 20px; /* Icon size */
+    height: 20px; /* Icon size */
+  }
+  #score-container {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
