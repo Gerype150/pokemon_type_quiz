@@ -1,26 +1,31 @@
-const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
-const typeApiUrl = "https://pokeapi.co/api/v2/type";
+const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000"; // Fetch a large number of Pokémon
+const typeApiUrl = "https://pokeapi.co/api/v2/type"; // URL to fetch Pokémon types
 
+// Fetch Pokémon data
 async function fetchPokemonData() {
   const response = await fetch(apiUrl);
   const data = await response.json();
   const allPokemon = data.results;
 
+  // Randomly select 10 Pokémon
   const selectedPokemon = allPokemon.sort(() => 0.5 - Math.random()).slice(0, 10);
   return selectedPokemon;
 }
 
+// Fetch detailed Pokémon data to get their types and image
 async function fetchPokemonDetails(url) {
   const response = await fetch(url);
   const data = await response.json();
   return data;
 }
 
+// Fetch Pokémon types data and include icon URLs
 async function fetchPokemonTypes() {
   const response = await fetch(typeApiUrl);
   const data = await response.json();
   const types = data.results;
 
+  // Filter out invalid types and add icon URLs to valid types
   const validTypes = ["normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy"];
   const typeIcons = {};
   types.forEach(type => {
@@ -32,60 +37,84 @@ async function fetchPokemonTypes() {
   return typeIcons;
 }
 
+// Generate a single question based on Pokémon data
 async function generateQuestion() {
   const pokemonData = await fetchPokemonData();
   const typeIcons = await fetchPokemonTypes();
   const pokemon = pokemonData[Math.floor(Math.random() * pokemonData.length)];
   const details = await fetchPokemonDetails(pokemon.url);
   const types = details.types.map(typeInfo => typeInfo.type.name);
-  const correctAnswer = types[0];
-  const imageUrl = details.sprites.front_default;
+  const correctAnswer = types[0]; // Assuming the first type is the primary type
+  const imageUrl = details.sprites.front_default; // Get the image URL
 
+  // Generate options (including the correct answer and some random types)
   const allTypes = Object.keys(typeIcons);
   const options = [correctAnswer, ...allTypes.filter(type => type !== correctAnswer).sort(() => 0.5 - Math.random()).slice(0, 3)];
 
   return {
-    question: `¿What primary type is this Pokemon?:  ${pokemon.name}`,
-    options: options.sort(() => 0.5 - Math.random()),
+    question: `¿De qué tipo es ${pokemon.name}?`,
+    options: options.sort(() => 0.5 - Math.random()), // Shuffle options
     answer: correctAnswer,
-    imageUrl: imageUrl,
-    typeIcons: typeIcons
+    imageUrl: imageUrl, // Include the image URL
+    typeIcons: typeIcons // Include type icons
   };
 }
 
-async function initQuiz() {
-  const question = await generateQuestion();
-  startQuiz(question);
+// Generate a batch of questions
+async function generateQuestions(batchSize = 10) {
+  const questions = [];
+  for (let i = 0; i < batchSize; i++) {
+    const question = await generateQuestion();
+    questions.push(question);
+  }
+  return questions;
 }
 
-function startQuiz(question) {
+// Initialize quiz
+async function initQuiz() {
+  const questions = await generateQuestions();
+  startQuiz(questions);
+}
+
+// Start Quiz
+function startQuiz(questions) {
+  let currentQuestionIndex = 0;
   let score = 0;
 
   document.getElementById("start-btn").addEventListener("click", () => {
     startScreen.classList.add("hidden");
     quizScreen.classList.remove("hidden");
-    loadQuestion(question);
+    loadQuestion();
   });
 
-  async function loadQuestion(question) {
-    questionElement.textContent = question.question;
-    optionsContainer.innerHTML = "";
-    imageElement.src = question.imageUrl;
+  // Load Question
+  async function loadQuestion() {
+    if (currentQuestionIndex >= questions.length) {
+      // Generate a new batch of questions if we run out
+      questions.push(...await generateQuestions());
+    }
 
-    question.options.forEach((option) => {
+    const currentQuestion = questions[currentQuestionIndex];
+    questionElement.textContent = currentQuestion.question;
+    optionsContainer.innerHTML = "";
+    imageElement.src = currentQuestion.imageUrl; // Set the image source
+
+    currentQuestion.options.forEach((option) => {
       const button = document.createElement("button");
-      button.textContent = option.charAt(0).toUpperCase() + option.slice(1);
+      button.textContent = option.charAt(0).toUpperCase() + option.slice(1); // Capitalize the first letter
+
+      // Add icon to the button
       const icon = document.createElement("img");
-      icon.src = question.typeIcons[option];
+      icon.src = currentQuestion.typeIcons[option]; // Use the type icon URL
       icon.alt = option;
 
-      button.prepend(icon);
+      button.prepend(icon); // Add the icon to the button
       button.addEventListener("click", async () => {
-        if (option === question.answer) {
+        if (option === currentQuestion.answer) {
           score++;
-          currentScoreElement.textContent = score;
-          const newQuestion = await generateQuestion();
-          loadQuestion(newQuestion);
+          currentScoreElement.textContent = score; // Update the score display
+          currentQuestionIndex++;
+          loadQuestion();
         } else {
           showResults();
         }
@@ -94,33 +123,37 @@ function startQuiz(question) {
     });
   }
 
+  // Show Results
   function showResults() {
     quizScreen.classList.add("hidden");
     resultScreen.classList.remove("hidden");
-    scoreElement.textContent = `Tu puntuación es: ${score}`;
+    scoreElement.textContent = `Score: ${score}`;
   }
 
+  // Restart Quiz
   restartButton.addEventListener("click", async () => {
+    currentQuestionIndex = 0;
     score = 0;
-    currentScoreElement.textContent = score;
+    currentScoreElement.textContent = score; // Reset the score display
     resultScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
-    const question = await generateQuestion();
-    loadQuestion(question);
+    const questions = await generateQuestions();
+    startQuiz(questions);
   });
 }
 
+// DOM elements
 const startScreen = document.getElementById("start-screen");
 const quizScreen = document.getElementById("quiz-screen");
 const resultScreen = document.getElementById("result-screen");
 
 const questionElement = document.getElementById("question");
 const optionsContainer = document.getElementById("options-container");
-const imageElement = document.getElementById("pokemon-image");
-
+const imageElement = document.getElementById("pokemon-image"); // Get the image element
 const nextButton = document.getElementById("next-btn");
 const scoreElement = document.getElementById("score");
-const currentScoreElement = document.getElementById("current-score");
+const currentScoreElement = document.getElementById("current-score"); // Get the current score element
 const restartButton = document.getElementById("restart-btn");
 
+// Initialize the quiz
 initQuiz();
