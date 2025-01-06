@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokémon Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      text-align: center;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+    }
+    h1 {
+      color: #ffcc00;
+      font-size: 2rem;
+    }
+    .hidden {
+      display: none;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .options button {
+      display: block;
+      margin: 5px auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Start Screen -->
+    <div id="start-screen">
+      <h1>¿Cuánto sabes de Pokémon?</h1>
+      <button id="start-btn">Start</button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="hidden">
+      <h1 id="question"></h1>
+      <div class="options" id="options-container"></div>
+      <button id="next-btn" class="hidden">Siguiente</button>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="hidden">
+      <h1>Resultados</h1>
+      <p id="score"></p>
+      <button id="restart-btn">Reintentar</button>
+    </div>
+  </div>
+
+  <script>
+    // Data for the quiz
+    const questions = [
+      {
+        question: "¿De qué tipo es Pikachu?",
+        options: ["Eléctrico", "Agua", "Fuego", "Planta"],
+        answer: "Eléctrico",
+      },
+      {
+        question: "¿Cuál es la evolución de Charmander?",
+        options: ["Charizard", "Bulbasaur", "Charmeleon", "Squirtle"],
+        answer: "Charmeleon",
+      },
+      {
+        question: "¿Qué Pokémon es conocido como 'El Pokémon Legendario'?",
+        options: ["Mew", "Mewtwo", "Articuno", "Arceus"],
+        answer: "Arceus",
+      },
+    ];
+
+    // DOM elements
+    const startScreen = document.getElementById("start-screen");
+    const quizScreen = document.getElementById("quiz-screen");
+    const resultScreen = document.getElementById("result-screen");
+
+    const questionElement = document.getElementById("question");
+    const optionsContainer = document.getElementById("options-container");
+    const nextButton = document.getElementById("next-btn");
+    const scoreElement = document.getElementById("score");
+    const restartButton = document.getElementById("restart-btn");
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    // Start Quiz
+    document.getElementById("start-btn").addEventListener("click", () => {
+      startScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      loadQuestion();
+    });
+
+    // Load Question
+    function loadQuestion() {
+      const currentQuestion = questions[currentQuestionIndex];
+      questionElement.textContent = currentQuestion.question;
+      optionsContainer.innerHTML = "";
+
+      currentQuestion.options.forEach((option) => {
+        const button = document.createElement("button");
+        button.textContent = option;
+        button.addEventListener("click", () => selectAnswer(option));
+        optionsContainer.appendChild(button);
+      });
+    }
+
+    // Select Answer
+    function selectAnswer(selectedOption) {
+      const correctAnswer = questions[currentQuestionIndex].answer;
+      if (selectedOption === correctAnswer) {
+        score++;
+      }
+      nextButton.classList.remove("hidden");
+    }
+
+    // Next Question
+    nextButton.addEventListener("click", () => {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        loadQuestion();
+        nextButton.classList.add("hidden");
+      } else {
+        showResults();
+      }
+    });
+
+    // Show Results
+    function showResults() {
+      quizScreen.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
+      scoreElement.textContent = `¡Has acertado ${score} de ${questions.length} preguntas!`;
+    }
+
+    // Restart Quiz
+    restartButton.addEventListener("click", () => {
+      resultScreen.classList.add("hidden");
+      startScreen.classList.remove("hidden");
+      currentQuestionIndex = 0;
+      score = 0;
+    });
+  </script>
+</body>
+</html>
