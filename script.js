@@ -137,7 +137,7 @@ function startQuiz(questions) {
     currentScoreElement.textContent = score; // Reset the score display
     resultScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
-    const questions = await generateQuestions();
+    const questions = await generateQuestions(); // Generate new questions
     startQuiz(questions);
   });
 }
