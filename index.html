@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz de Pokémon</title>
+  <title>Pokémon Type Quiz</title>
   <link rel="stylesheet" href="style.css">
   <style>
     button {
@@ -33,7 +33,7 @@
   <div class="container">
     <!-- Start Screen -->
     <div id="start-screen">
-      <h1>¿Cuánto sabes de Pokémon?</h1>
+      <h1>¿Are you a Pokemon Master?</h1>
       <button id="start-btn">Start</button>
     </div>
 
@@ -41,16 +41,16 @@
     <div id="quiz-screen" class="hidden">
       <h1 id="question"></h1>
       <img id="pokemon-image" src="" alt="Imagen de Pokémon">
-      <div id="score-container">Puntuación: <span id="current-score">0</span></div>
+      <div id="score-container">Score: <span id="current-score">0</span></div>
       <div class="options" id="options-container"></div>
-      <button id="next-btn" class="hidden">Siguiente</button>
+      <button id="next-btn" class="hidden">Next</button>
     </div>
 
     <!-- Result Screen -->
     <div id="result-screen" class="hidden">
-      <h1>Resultados</h1>
+      <h1>Results</h1>
       <p id="score"></p>
-      <button id="restart-btn">Reintentar</button>
+      <button id="restart-btn">Try again</button>
     </div>
   </div>
 
