@@ -5,11 +5,7 @@ const typeApiUrl = "https://pokeapi.co/api/v2/type"; // URL to fetch Pokémon ty
 async function fetchPokemonData() {
   const response = await fetch(apiUrl);
   const data = await response.json();
-  const allPokemon = data.results;
-
-  // Randomly select 10 Pokémon
-  const selectedPokemon = allPokemon.sort(() => 0.5 - Math.random()).slice(0, 10);
-  return selectedPokemon;
+  return data.results;
 }
 
 // Fetch detailed Pokémon data to get their types and image
@@ -39,9 +35,10 @@ async function fetchPokemonTypes() {
 
 // Generate a single question based on Pokémon data
 async function generateQuestion() {
-  const pokemonData = await fetchPokemonData();
+  const allPokemon = await fetchPokemonData();
   const typeIcons = await fetchPokemonTypes();
-  const pokemon = pokemonData[Math.floor(Math.random() * pokemonData.length)];
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
   const details = await fetchPokemonDetails(pokemon.url);
   const types = details.types.map(typeInfo => typeInfo.type.name);
   const correctAnswer = types[0]; // Assuming the first type is the primary type
@@ -52,7 +49,7 @@ async function generateQuestion() {
   const options = [correctAnswer, ...allTypes.filter(type => type !== correctAnswer).sort(() => 0.5 - Math.random()).slice(0, 3)];
 
   return {
-    question: `¿De qué tipo es ${pokemon.name}?`,
+    question: `What type is ${pokemon.name}?`,
     options: options.sort(() => 0.5 - Math.random()), // Shuffle options
     answer: correctAnswer,
     imageUrl: imageUrl, // Include the image URL
@@ -60,61 +57,44 @@ async function generateQuestion() {
   };
 }
 
-// Generate a batch of questions
-async function generateQuestions(batchSize = 10) {
-  const questions = [];
-  for (let i = 0; i < batchSize; i++) {
-    const question = await generateQuestion();
-    questions.push(question);
-  }
-  return questions;
-}
-
 // Initialize quiz
 async function initQuiz() {
-  const questions = await generateQuestions();
-  startQuiz(questions);
+  const question = await generateQuestion();
+  startQuiz(question);
 }
 
 // Start Quiz
-function startQuiz(questions) {
-  let currentQuestionIndex = 0;
+function startQuiz(question) {
   let score = 0;
 
   document.getElementById("start-btn").addEventListener("click", () => {
     startScreen.classList.add("hidden");
     quizScreen.classList.remove("hidden");
-    loadQuestion();
+    loadQuestion(question);
   });
 
   // Load Question
-  async function loadQuestion() {
-    if (currentQuestionIndex >= questions.length) {
-      // Generate a new batch of questions if we run out
-      questions.push(...await generateQuestions());
-    }
-
-    const currentQuestion = questions[currentQuestionIndex];
-    questionElement.textContent = currentQuestion.question;
+  async function loadQuestion(question) {
+    questionElement.textContent = question.question;
     optionsContainer.innerHTML = "";
-    imageElement.src = currentQuestion.imageUrl; // Set the image source
+    imageElement.src = question.imageUrl; // Set the image source
 
-    currentQuestion.options.forEach((option) => {
+    question.options.forEach((option) => {
       const button = document.createElement("button");
       button.textContent = option.charAt(0).toUpperCase() + option.slice(1); // Capitalize the first letter
 
       // Add icon to the button
       const icon = document.createElement("img");
-      icon.src = currentQuestion.typeIcons[option]; // Use the type icon URL
+      icon.src = question.typeIcons[option]; // Use the type icon URL
       icon.alt = option;
 
       button.prepend(icon); // Add the icon to the button
       button.addEventListener("click", async () => {
-        if (option === currentQuestion.answer) {
+        if (option === question.answer) {
           score++;
           currentScoreElement.textContent = score; // Update the score display
-          currentQuestionIndex++;
-          loadQuestion();
+          const newQuestion = await generateQuestion();
+          loadQuestion(newQuestion);
         } else {
           showResults();
         }
@@ -132,13 +112,11 @@ function startQuiz(questions) {
 
   // Restart Quiz
   restartButton.addEventListener("click", async () => {
-    currentQuestionIndex = 0;
     score = 0;
     currentScoreElement.textContent = score; // Reset the score display
     resultScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
-    const questions = await generateQuestions();
-    startQuiz(questions);
+    initQuiz();
   });
 }
 
