@@ -90,14 +90,27 @@ function startQuiz(question) {
 
       button.prepend(icon); // Add the icon to the button
       button.addEventListener("click", async () => {
-        if (option === question.answer) {
-          score++;
-          currentScoreElement.textContent = score; // Update the score display
-          const newQuestion = await generateQuestion();
-          loadQuestion(newQuestion);
-        } else {
-          showResults();
-        }
+        // Highlight correct and incorrect answers
+        question.options.forEach((opt) => {
+          const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
+          if (opt === question.answer) {
+            btn.style.backgroundColor = "green";
+          } else {
+            btn.style.backgroundColor = "red";
+          }
+        });
+
+        // Wait for .5 seconds before checking the answer
+        setTimeout(async () => {
+          if (option === question.answer) {
+            score++;
+            currentScoreElement.textContent = score; // Update the score display
+            const newQuestion = await generateQuestion();
+            loadQuestion(newQuestion);
+          } else {
+            showResults();
+          }
+        }, 500);
       });
       optionsContainer.appendChild(button);
     });
