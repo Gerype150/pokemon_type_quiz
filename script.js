@@ -73,55 +73,89 @@ function startQuiz(question) {
     loadQuestion(question);
   });
 
-  // Load Question
-  async function loadQuestion(question) {
-    questionElement.textContent = question.question;
-    optionsContainer.innerHTML = "";
-    imageElement.src = question.imageUrl; // Set the image source
+// Load Question
+async function loadQuestion(question) {
+  questionElement.textContent = question.question;
+  optionsContainer.innerHTML = "";
+  imageElement.src = question.imageUrl; // Set the image source
 
-    question.options.forEach((option) => {
-      const button = document.createElement("button");
-      button.textContent = option.charAt(0).toUpperCase() + option.slice(1); // Capitalize the first letter
+  let timer;
+  const progressBar = document.getElementById("progress-bar");
+  progressBar.style.transition = "none"; // Reset the transition
+  progressBar.style.width = "100%"; // Reset the progress bar
 
-      // Add icon to the button
-      const icon = document.createElement("img");
-      icon.src = question.typeIcons[option]; // Use the type icon URL
-      icon.alt = option;
+  // Force reflow to apply the width immediately
+  progressBar.offsetWidth;
 
-      button.prepend(icon); // Add the icon to the button
-      button.addEventListener("click", async () => {
-        // Highlight correct and incorrect answers
-        question.options.forEach((opt) => {
-          const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
-          if (opt === question.answer) {
-            btn.style.backgroundColor = "green";
-          } else {
-            btn.style.backgroundColor = "red";
-          }
-        });
+  progressBar.style.transition = "width 5s linear"; // Set the transition
+  progressBar.style.width = "0%"; // Start the transition
 
-        // Wait for .5 seconds before checking the answer
-        setTimeout(async () => {
-          if (option === question.answer) {
-            score++;
-            currentScoreElement.textContent = score; // Update the score display
-            const newQuestion = await generateQuestion();
-            loadQuestion(newQuestion);
-          } else {
-            showResults();
-          }
-        }, 500);
+  question.options.forEach((option) => {
+    const button = document.createElement("button");
+    button.textContent = option.charAt(0).toUpperCase() + option.slice(1); // Capitalize the first letter
+
+    // Add icon to the button
+    const icon = document.createElement("img");
+    icon.src = question.typeIcons[option]; // Use the type icon URL
+    icon.alt = option;
+
+    button.prepend(icon); // Add the icon to the button
+    button.addEventListener("click", async () => {
+      clearTimeout(timer); // Clear the timer when an option is selected
+      progressBar.style.transition = "none"; // Stop the progress bar transition
+
+      // Highlight correct and incorrect answers
+      question.options.forEach((opt) => {
+        const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
+        if (opt === question.answer) {
+          btn.style.backgroundColor = "green";
+        } else {
+          btn.style.backgroundColor = "red";
+        }
       });
-      optionsContainer.appendChild(button);
-    });
-  }
 
-  // Show Results
-  function showResults() {
-    quizScreen.classList.add("hidden");
-    resultScreen.classList.remove("hidden");
-    scoreElement.textContent = `Score: ${score}`;
-  }
+      // Wait for .75 seconds before checking the answer
+      setTimeout(async () => {
+        if (option === question.answer) {
+          score++;
+          currentScoreElement.textContent = score; // Update the score display
+          const newQuestion = await generateQuestion();
+          loadQuestion(newQuestion);
+        } else {
+          showResults();
+        }
+      }, 750);
+    });
+    optionsContainer.appendChild(button);
+  });
+
+  // Set a timer for 5 seconds
+  progressBar.style.transition = "width 5s linear";
+  progressBar.style.width = "0%";
+  timer = setTimeout(() => {
+    // Highlight correct and incorrect answers
+    question.options.forEach((opt) => {
+      const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
+      if (opt === question.answer) {
+        btn.style.backgroundColor = "green";
+      } else {
+        btn.style.backgroundColor = "red";
+      }
+    });
+
+    // Wait for .75 seconds before showing results
+    setTimeout(() => {
+      showResults();
+    }, 750);
+  }, 5000);
+}
+
+// Show Results
+function showResults() {
+  quizScreen.classList.add("hidden");
+  resultScreen.classList.remove("hidden");
+  scoreElement.textContent = `Score: ${score}`;
+}
 
   // Restart Quiz
   restartButton.addEventListener("click", async () => {
