@@ -50,7 +50,7 @@ async function generateQuestion() {
 
   return {
     question: `What type is ${pokemon.name}?`,
-    options: options.sort(() => 0.5 - Math.random()), // Shuffle options
+    options: options.toSorted(() => 0.5 - Math.random()), // Shuffle options
     answer: correctAnswer,
     imageUrl: imageUrl, // Include the image URL
     typeIcons: typeIcons // Include type icons
