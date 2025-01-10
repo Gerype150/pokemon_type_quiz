@@ -93,17 +93,25 @@ async function loadQuestion(question) {
   question.options.forEach((option) => {
     const button = document.createElement("button");
     button.textContent = option.charAt(0).toUpperCase() + option.slice(1); // Capitalize the first letter
-
+  
     // Add icon to the button
     const icon = document.createElement("img");
     icon.src = question.typeIcons[option]; // Use the type icon URL
     icon.alt = option;
-
+  
     button.prepend(icon); // Add the icon to the button
+    button.disabled = true; // Disable the button initially
+    setTimeout(() => {
+      button.disabled = false; // Enable the button after a fraction of a second
+    }, 300); // Adjust the delay as needed
+  
     button.addEventListener("click", async () => {
       clearTimeout(timer); // Clear the timer when an option is selected
       progressBar.style.transition = "none"; // Stop the progress bar transition
-
+  
+      // Disable all buttons to prevent multiple clicks
+      Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+  
       // Highlight correct and incorrect answers
       question.options.forEach((opt) => {
         const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
@@ -113,8 +121,8 @@ async function loadQuestion(question) {
           btn.style.backgroundColor = "red";
         }
       });
-
-      // Wait for .75 seconds before checking the answer
+  
+      // Wait for 1.5 seconds before checking the answer
       setTimeout(async () => {
         if (option === question.answer) {
           score++;
@@ -124,14 +132,12 @@ async function loadQuestion(question) {
         } else {
           showResults();
         }
-      }, 750);
+      }, 1500);
     });
     optionsContainer.appendChild(button);
   });
 
   // Set a timer for 5 seconds
-  progressBar.style.transition = "width 5s linear";
-  progressBar.style.width = "0%";
   timer = setTimeout(() => {
     // Highlight correct and incorrect answers
     question.options.forEach((opt) => {
@@ -143,10 +149,10 @@ async function loadQuestion(question) {
       }
     });
 
-    // Wait for .75 seconds before showing results
+    // Wait for 1.5 seconds before showing results
     setTimeout(() => {
       showResults();
-    }, 750);
+    }, 1500);
   }, 5000);
 }
 
