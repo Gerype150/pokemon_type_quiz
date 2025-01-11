@@ -1,6 +1,6 @@
-const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000"; // Fetch a large number of Pokémon
-const typeApiUrl = "https://pokeapi.co/api/v2/type"; // URL to fetch Pokémon types
-
+const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
+const typeApiUrl = "https://pokeapi.co/api/v2/type";
+let score = 0;
 // Fetch Pokémon data
 async function fetchPokemonData() {
   const response = await fetch(apiUrl);
@@ -21,7 +21,6 @@ async function fetchPokemonTypes() {
   const data = await response.json();
   const types = data.results;
 
-  // Filter out invalid types and add icon URLs to valid types
   const validTypes = ["normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy"];
   const typeIcons = {};
   types.forEach(type => {
@@ -41,19 +40,18 @@ async function generateQuestion() {
   const pokemon = allPokemon[randomIndex];
   const details = await fetchPokemonDetails(pokemon.url);
   const types = details.types.map(typeInfo => typeInfo.type.name);
-  const correctAnswer = types[0]; // Assuming the first type is the primary type
-  const imageUrl = details.sprites.front_default; // Get the image URL
+  const correctAnswer = types[0];
+  const imageUrl = details.sprites.front_default;
 
-  // Generate options (including the correct answer and some random types)
   const allTypes = Object.keys(typeIcons);
   const options = [correctAnswer, ...allTypes.filter(type => type !== correctAnswer).sort(() => 0.5 - Math.random()).slice(0, 3)];
 
   return {
     question: `What type is ${pokemon.name}?`,
-    options: options.toSorted(() => 0.5 - Math.random()), // Shuffle options
+    options: options.sort(() => 0.5 - Math.random()),
     answer: correctAnswer,
-    imageUrl: imageUrl, // Include the image URL
-    typeIcons: typeIcons // Include type icons
+    imageUrl: imageUrl,
+    typeIcons: typeIcons
   };
 }
 
@@ -65,7 +63,7 @@ async function initQuiz() {
 
 // Start Quiz
 function startQuiz(question) {
-  let score = 0;
+
 
   document.getElementById("start-btn").addEventListener("click", () => {
     startScreen.classList.add("hidden");
@@ -73,87 +71,87 @@ function startQuiz(question) {
     loadQuestion(question);
   });
 
+  restartButton.addEventListener("click", async () => {
+    score = 0;
+    currentScoreElement.textContent = score;
+    resultScreen.classList.add("hidden");
+    startScreen.classList.remove("hidden");
+    initQuiz();
+  });
+}
+
 // Load Question
 async function loadQuestion(question) {
   questionElement.textContent = question.question;
   optionsContainer.innerHTML = "";
-  imageElement.src = question.imageUrl; // Set the image source
+  imageElement.src = question.imageUrl;
 
   let timer;
   const progressBar = document.getElementById("progress-bar");
-  progressBar.style.transition = "none"; // Reset the transition
-  progressBar.style.width = "100%"; // Reset the progress bar
-
-  // Force reflow to apply the width immediately
-  progressBar.offsetWidth;
-
-  progressBar.style.transition = "width 5s linear"; // Set the transition
-  progressBar.style.width = "0%"; // Start the transition
+  resetProgressBar(progressBar);
 
   question.options.forEach((option) => {
-    const button = document.createElement("button");
-    button.textContent = option.charAt(0).toUpperCase() + option.slice(1); // Capitalize the first letter
-  
-    // Add icon to the button
-    const icon = document.createElement("img");
-    icon.src = question.typeIcons[option]; // Use the type icon URL
-    icon.alt = option;
-  
-    button.prepend(icon); // Add the icon to the button
-    button.disabled = true; // Disable the button initially
-    setTimeout(() => {
-      button.disabled = false; // Enable the button after a fraction of a second
-    }, 300); // Adjust the delay as needed
-  
-    button.addEventListener("click", async () => {
-      clearTimeout(timer); // Clear the timer when an option is selected
-      progressBar.style.transition = "none"; // Stop the progress bar transition
-  
-      // Disable all buttons to prevent multiple clicks
-      Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
-  
-      // Highlight correct and incorrect answers
-      question.options.forEach((opt) => {
-        const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
-        if (opt === question.answer) {
-          btn.style.backgroundColor = "green";
-        } else {
-          btn.style.backgroundColor = "red";
-        }
-      });
-  
-      // Wait for 1.5 seconds before checking the answer
-      setTimeout(async () => {
-        if (option === question.answer) {
-          score++;
-          currentScoreElement.textContent = score; // Update the score display
-          const newQuestion = await generateQuestion();
-          loadQuestion(newQuestion);
-        } else {
-          showResults();
-        }
-      }, 1500);
-    });
+    const button = createOptionButton(option, question.typeIcons);
+    button.addEventListener("click", () => handleOptionClick(option, question, timer, progressBar));
     optionsContainer.appendChild(button);
   });
 
-  // Set a timer for 5 seconds
-  timer = setTimeout(() => {
-    // Highlight correct and incorrect answers
-    question.options.forEach((opt) => {
-      const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
-      if (opt === question.answer) {
-        btn.style.backgroundColor = "green";
-      } else {
-        btn.style.backgroundColor = "red";
-      }
-    });
+  timer = setTimeout(() => handleTimeout(question), 5000);
+}
 
-    // Wait for 1.5 seconds before showing results
-    setTimeout(() => {
+function resetProgressBar(progressBar) {
+  progressBar.style.transition = "none";
+  progressBar.style.width = "100%";
+  progressBar.offsetWidth;
+  progressBar.style.transition = "width 5s linear";
+  progressBar.style.width = "0%";
+}
+
+function createOptionButton(option, typeIcons) {
+  const button = document.createElement("button");
+  button.textContent = option.charAt(0).toUpperCase() + option.slice(1);
+
+  const icon = document.createElement("img");
+  icon.src = typeIcons[option];
+  icon.alt = option;
+
+  button.prepend(icon);
+  button.disabled = true;
+  setTimeout(() => button.disabled = false, 300);
+
+  return button;
+}
+
+function handleOptionClick(option, question, timer, progressBar) {
+  clearTimeout(timer);
+  progressBar.style.transition = "none";
+
+  Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+
+  highlightAnswers(question);
+
+  setTimeout(async () => {
+    if (option === question.answer) {
+      score++;
+      currentScoreElement.textContent = score;
+      const newQuestion = await generateQuestion();
+      loadQuestion(newQuestion);
+    } else {
       showResults();
-    }, 1500);
-  }, 5000);
+    }
+  }, 1500);
+}
+
+function handleTimeout(question) {
+  highlightAnswers(question);
+  setTimeout(() => showResults(), 1500);
+}
+
+function highlightAnswers(question) {
+  question.options.forEach((opt) => {
+    const btn = Array.from(optionsContainer.children).find(b => b.textContent.trim() === opt.charAt(0).toUpperCase() + opt.slice(1));
+    btn.style.backgroundColor = opt === question.answer ? "green" : "red";
+  });
 }
 
 // Show Results
@@ -163,16 +161,6 @@ function showResults() {
   scoreElement.textContent = `Score: ${score}`;
 }
 
-  // Restart Quiz
-  restartButton.addEventListener("click", async () => {
-    score = 0;
-    currentScoreElement.textContent = score; // Reset the score display
-    resultScreen.classList.add("hidden");
-    startScreen.classList.remove("hidden");
-    initQuiz();
-  });
-}
-
 // DOM elements
 const startScreen = document.getElementById("start-screen");
 const quizScreen = document.getElementById("quiz-screen");
@@ -180,10 +168,9 @@ const resultScreen = document.getElementById("result-screen");
 
 const questionElement = document.getElementById("question");
 const optionsContainer = document.getElementById("options-container");
-const imageElement = document.getElementById("pokemon-image"); // Get the image element
-const nextButton = document.getElementById("next-btn");
+const imageElement = document.getElementById("pokemon-image");
 const scoreElement = document.getElementById("score");
-const currentScoreElement = document.getElementById("current-score"); // Get the current score element
+const currentScoreElement = document.getElementById("current-score");
 const restartButton = document.getElementById("restart-btn");
 
 // Initialize the quiz
