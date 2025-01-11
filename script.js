@@ -1,6 +1,9 @@
 const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
 const typeApiUrl = "https://pokeapi.co/api/v2/type";
 let score = 0;
+let timer;
+let progressBar = document.getElementById("progress-bar"); // Declare progressBar as a global variable
+
 // Fetch Pokémon data
 async function fetchPokemonData() {
   const response = await fetch(apiUrl);
@@ -57,14 +60,13 @@ async function generateQuestion() {
 
 // Initialize quiz
 async function initQuiz() {
+  score = 0; // Initialize score
   const question = await generateQuestion();
   startQuiz(question);
 }
 
 // Start Quiz
 function startQuiz(question) {
-
-
   document.getElementById("start-btn").addEventListener("click", () => {
     startScreen.classList.add("hidden");
     quizScreen.classList.remove("hidden");
@@ -86,25 +88,35 @@ async function loadQuestion(question) {
   optionsContainer.innerHTML = "";
   imageElement.src = question.imageUrl;
 
-  let timer;
-  const progressBar = document.getElementById("progress-bar");
-  resetProgressBar(progressBar);
+  resetProgressBar();
 
   question.options.forEach((option) => {
     const button = createOptionButton(option, question.typeIcons);
-    button.addEventListener("click", () => handleOptionClick(option, question, timer, progressBar));
+    button.addEventListener("click", () => handleOptionClick(option, question, timer));
     optionsContainer.appendChild(button);
   });
 
+  if (timer) {
+    clearTimeout(timer);
+  }
   timer = setTimeout(() => handleTimeout(question), 5000);
 }
 
-function resetProgressBar(progressBar) {
+function resetProgressBar() {
   progressBar.style.transition = "none";
   progressBar.style.width = "100%";
   progressBar.offsetWidth;
   progressBar.style.transition = "width 5s linear";
   progressBar.style.width = "0%";
+}
+
+function stopProgressBar() {
+  if (progressBar) {
+    const computedStyle = window.getComputedStyle(progressBar);
+    const currentWidth = computedStyle.width;
+    progressBar.style.transition = "none";
+    progressBar.style.width = currentWidth;
+  }
 }
 
 function createOptionButton(option, typeIcons) {
@@ -122,9 +134,9 @@ function createOptionButton(option, typeIcons) {
   return button;
 }
 
-function handleOptionClick(option, question, timer, progressBar) {
+function handleOptionClick(option, question) {
   clearTimeout(timer);
-  progressBar.style.transition = "none";
+  stopProgressBar();
 
   Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
 

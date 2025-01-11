@@ -53,10 +53,10 @@ body {
     height: 20px;
   }
   #progress-bar-container {
-    width: 100%;
+    width: 80%;
     height: 10px;
     background-color: #ddd;
-    margin-top: 10px;
+    margin: 10px auto;
   }
 
   #progress-bar {
