@@ -2,7 +2,7 @@ const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
 const typeApiUrl = "https://pokeapi.co/api/v2/type";
 let score = 0;
 let timer;
-let progressBar = document.getElementById("progress-bar"); // Declare progressBar as a global variable
+let progressBar = document.getElementById("progress-bar");
 
 // Fetch Pokémon data
 async function fetchPokemonData() {
@@ -54,13 +54,14 @@ async function generateQuestion() {
     options: options.sort(() => 0.5 - Math.random()),
     answer: correctAnswer,
     imageUrl: imageUrl,
-    typeIcons: typeIcons
+    typeIcons: typeIcons,
+    pokemonName: pokemon.name
   };
 }
 
 // Initialize quiz
 async function initQuiz() {
-  score = 0; // Initialize score
+  score = 0;
   const question = await generateQuestion();
   startQuiz(question);
 }
@@ -85,6 +86,10 @@ function startQuiz(question) {
 // Load Question
 async function loadQuestion(question) {
   questionElement.textContent = question.question;
+  questionElement.innerHTML = question.question.replace(
+    new RegExp(`\\b${question.pokemonName}\\b`, 'gi'),
+    (match) => `<span class="pokemon-name">${match.charAt(0).toUpperCase() + match.slice(1)}</span>`
+  );
   optionsContainer.innerHTML = "";
   imageElement.src = question.imageUrl;
 
