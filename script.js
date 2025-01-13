@@ -1,8 +1,9 @@
 const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
 const typeApiUrl = "https://pokeapi.co/api/v2/type";
 let score = 0;
+let minigameId = 21;
 let timer;
-let progressBar = document.getElementById("progress-bar");
+let progressBar;
 
 // Fetch Pokémon data
 async function fetchPokemonData() {
@@ -81,26 +82,47 @@ async function generateNameQuestion() {
 }
 
 // Initialize quiz
-async function initQuiz() {
-  score = 0;
-  const question = await generateNameQuestion();
-  startQuiz(question);
+async function initQuiz(minigameId) {
+  switch (minigameId) {
+    case 0:
+      const Typequestion = await generateTypeQuestion();
+      loadQuestion(Typequestion);
+      startScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      break;
+    case 1:
+      const Namequestion = await generateNameQuestion();
+      loadQuestion(Namequestion);
+      startScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      break;
+    default:
+      console.error("Invalid minigame ID");
+  }
 }
 
 // Start Quiz
-function startQuiz(question) {
-  document.getElementById("start-btn").addEventListener("click", () => {
-    startScreen.classList.add("hidden");
-    quizScreen.classList.remove("hidden");
-    loadQuestion(question);
-  });
+function startQuiz() {
+
+  if (minigameId === 21) {
+    document.getElementById("type-quiz-btn").addEventListener("click", () => {
+      minigameId = 0;
+      initQuiz(minigameId);
+    });
+  
+    document.getElementById("name-quiz-btn").addEventListener("click", () => {
+      minigameId = 1;
+      initQuiz(minigameId);
+    });
+  }
+  
 
   restartButton.addEventListener("click", async () => {
-    score = 0;
+    resetScore();
     currentScoreElement.textContent = score;
     resultScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
-    initQuiz();
+    startQuiz();
   });
 }
 
@@ -114,6 +136,7 @@ async function loadQuestion(question) {
   optionsContainer.innerHTML = "";
   imageElement.src = question.imageUrl;
 
+  progressBar = document.getElementById("progress-bar");
   resetProgressBar();
 
   question.options.forEach((option) => {
@@ -150,7 +173,6 @@ function createOptionButton(option, typeIcons) {
   button.textContent = option.charAt(0).toUpperCase() + option.slice(1);
 
   if (typeIcons) {
-    console.log("Array de iconos: " + typeIcons);
     const icon = document.createElement("img");
     icon.src = typeIcons[option];
     icon.alt = option;
@@ -173,10 +195,20 @@ function handleOptionClick(option, question) {
 
   setTimeout(async () => {
     if (option === question.answer) {
+      console.log(minigameId);
       score++;
       currentScoreElement.textContent = score;
-      const newQuestion = await generateNameQuestion();
-      loadQuestion(newQuestion);
+      switch (minigameId) {
+        case 0:{
+          const newQuestion = await generateTypeQuestion();
+          loadQuestion(newQuestion);
+          break;
+        }
+        case 1:{
+          const newQuestion = await generateNameQuestion();
+          loadQuestion(newQuestion);
+          break;
+        }}
     } else {
       showResults();
     }
@@ -202,6 +234,12 @@ function showResults() {
   scoreElement.textContent = `Score: ${score}`;
 }
 
+//Reset Score
+function resetScore() {
+  score = 0;
+  currentScoreElement.textContent = score;
+}
+
 // DOM elements
 const startScreen = document.getElementById("start-screen");
 const quizScreen = document.getElementById("quiz-screen");
@@ -215,4 +253,4 @@ const currentScoreElement = document.getElementById("current-score");
 const restartButton = document.getElementById("restart-btn");
 
 // Initialize the quiz
-initQuiz();
+startQuiz();
