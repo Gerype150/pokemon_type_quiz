@@ -36,7 +36,7 @@ async function fetchPokemonTypes() {
 }
 
 // Generate a single question based on Pokémon data
-async function generateQuestion() {
+async function generateTypeQuestion() {
   const allPokemon = await fetchPokemonData();
   const typeIcons = await fetchPokemonTypes();
   const randomIndex = Math.floor(Math.random() * allPokemon.length);
@@ -59,10 +59,31 @@ async function generateQuestion() {
   };
 }
 
+// Generate a single question based on Pokémon data
+async function generateNameQuestion() {
+  const allPokemon = await fetchPokemonData();
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
+  const details = await fetchPokemonDetails(pokemon.url);
+  const imageUrl = details.sprites.front_default;
+
+  // Generate options with random Pokémon names
+  const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
+
+  return {
+    question: `What is the name of this Pokémon?`,
+    options: options.sort(() => 0.5 - Math.random()), // Shuffle options
+    answer: pokemon.name,
+    imageUrl: imageUrl,
+    typeIcons: null, // No type icons needed for name question
+    pokemonName: pokemon.name
+  };
+}
+
 // Initialize quiz
 async function initQuiz() {
   score = 0;
-  const question = await generateQuestion();
+  const question = await generateNameQuestion();
   startQuiz(question);
 }
 
@@ -128,11 +149,14 @@ function createOptionButton(option, typeIcons) {
   const button = document.createElement("button");
   button.textContent = option.charAt(0).toUpperCase() + option.slice(1);
 
-  const icon = document.createElement("img");
-  icon.src = typeIcons[option];
-  icon.alt = option;
+  if (typeIcons) {
+    console.log("Array de iconos: " + typeIcons);
+    const icon = document.createElement("img");
+    icon.src = typeIcons[option];
+    icon.alt = option;
+    button.prepend(icon);
+  }
 
-  button.prepend(icon);
   button.disabled = true;
   setTimeout(() => button.disabled = false, 300);
 
@@ -151,7 +175,7 @@ function handleOptionClick(option, question) {
     if (option === question.answer) {
       score++;
       currentScoreElement.textContent = score;
-      const newQuestion = await generateQuestion();
+      const newQuestion = await generateNameQuestion();
       loadQuestion(newQuestion);
     } else {
       showResults();
