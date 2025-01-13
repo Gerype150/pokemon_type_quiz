@@ -2,7 +2,8 @@ const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
 const typeApiUrl = "https://pokeapi.co/api/v2/type";
 let score = 0;
 let timer;
-let progressBar = document.getElementById("progress-bar"); // Declare progressBar as a global variable
+let progressBar;
+let minigameId = 21;
 
 // Fetch Pokémon data
 async function fetchPokemonData() {
@@ -35,8 +36,8 @@ async function fetchPokemonTypes() {
   return typeIcons;
 }
 
-// Generate a single question based on Pokémon data
-async function generateQuestion() {
+// Generate a single question based on Pokémon type
+async function generateTypeQuestion() {
   const allPokemon = await fetchPokemonData();
   const typeIcons = await fetchPokemonTypes();
   const randomIndex = Math.floor(Math.random() * allPokemon.length);
@@ -54,45 +55,61 @@ async function generateQuestion() {
     options: options.sort(() => 0.5 - Math.random()),
     answer: correctAnswer,
     imageUrl: imageUrl,
-    typeIcons: typeIcons
+    typeIcons: typeIcons,
+    pokemonName: pokemon.name
+  };
+}
+
+// Generate a single question based on Pokémon name
+async function generateNameQuestion() {
+  const allPokemon = await fetchPokemonData();
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
+  const details = await fetchPokemonDetails(pokemon.url);
+  const imageUrl = details.sprites.front_default;
+
+  const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
+
+  return {
+    question: `What is the name of this Pokémon?`,
+    options: options.sort(() => 0.5 - Math.random()),
+    answer: pokemon.name,
+    imageUrl: imageUrl,
+    typeIcons: null,
+    pokemonName: pokemon.name
   };
 }
 
 // Initialize quiz
-async function initQuiz() {
-  score = 0; // Initialize score
-  const question = await generateQuestion();
+async function initQuiz(generateQuestionFunction) {
+  score = 0;
+  const question = await generateQuestionFunction();
   startQuiz(question);
 }
 
 // Start Quiz
 function startQuiz(question) {
-  document.getElementById("start-btn").addEventListener("click", () => {
-    startScreen.classList.add("hidden");
-    quizScreen.classList.remove("hidden");
-    loadQuestion(question);
-  });
-
-  restartButton.addEventListener("click", async () => {
-    score = 0;
-    currentScoreElement.textContent = score;
-    resultScreen.classList.add("hidden");
-    startScreen.classList.remove("hidden");
-    initQuiz();
-  });
+  startScreen.classList.add("hidden");
+  quizScreen.classList.remove("hidden");
+  loadQuestion(question);
 }
 
 // Load Question
 async function loadQuestion(question) {
   questionElement.textContent = question.question;
+  questionElement.innerHTML = question.question.replace(
+    new RegExp(`\\b${question.pokemonName}\\b`, 'gi'),
+    (match) => `<span class="pokemon-name">${match.charAt(0).toUpperCase() + match.slice(1)}</span>`
+  );
   optionsContainer.innerHTML = "";
   imageElement.src = question.imageUrl;
 
+  progressBar = document.getElementById("progress-bar");
   resetProgressBar();
 
   question.options.forEach((option) => {
     const button = createOptionButton(option, question.typeIcons);
-    button.addEventListener("click", () => handleOptionClick(option, question, timer));
+    button.addEventListener("click", () => handleOptionClick(option, question));
     optionsContainer.appendChild(button);
   });
 
@@ -123,11 +140,13 @@ function createOptionButton(option, typeIcons) {
   const button = document.createElement("button");
   button.textContent = option.charAt(0).toUpperCase() + option.slice(1);
 
-  const icon = document.createElement("img");
-  icon.src = typeIcons[option];
-  icon.alt = option;
+  if (typeIcons) {
+    const icon = document.createElement("img");
+    icon.src = typeIcons[option];
+    icon.alt = option;
+    button.prepend(icon);
+  }
 
-  button.prepend(icon);
   button.disabled = true;
   setTimeout(() => button.disabled = false, 300);
 
@@ -146,7 +165,7 @@ function handleOptionClick(option, question) {
     if (option === question.answer) {
       score++;
       currentScoreElement.textContent = score;
-      const newQuestion = await generateQuestion();
+      const newQuestion = minigameId === 0 ? await generateTypeQuestion() : await generateNameQuestion();
       loadQuestion(newQuestion);
     } else {
       showResults();
@@ -166,11 +185,15 @@ function highlightAnswers(question) {
   });
 }
 
-// Show Results
 function showResults() {
   quizScreen.classList.add("hidden");
   resultScreen.classList.remove("hidden");
   scoreElement.textContent = `Score: ${score}`;
+}
+
+function resetScore() {
+  score = 0;
+  currentScoreElement.textContent = score;
 }
 
 // DOM elements
@@ -185,5 +208,24 @@ const scoreElement = document.getElementById("score");
 const currentScoreElement = document.getElementById("current-score");
 const restartButton = document.getElementById("restart-btn");
 
+// Initialize main function
+async function main() {
+  document.getElementById("type-quiz-btn").addEventListener("click", () => {
+    minigameId = 0;
+    initQuiz(generateTypeQuestion);
+  });
+
+  document.getElementById("name-quiz-btn").addEventListener("click", () => {
+    minigameId = 1;
+    initQuiz(generateNameQuestion);
+  });
+
+  restartButton.addEventListener("click", async () => {
+    resetScore();
+    resultScreen.classList.add("hidden");
+    startScreen.classList.remove("hidden");
+  });
+}
+
 // Initialize the quiz
-initQuiz();
+main();

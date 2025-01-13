@@ -18,7 +18,7 @@ body {
     max-width: 400px;
   }
   h1 {
-    color: #ffcc00;
+    color: #ffc927;
     font-size: 2rem;
   }
   .hidden {
@@ -68,4 +68,7 @@ body {
   #score-container {
     font-size: 1.2rem;
     margin-bottom: 20px;
+  }
+  .pokemon-name {
+    color: rgb(43, 43, 179);
   }
