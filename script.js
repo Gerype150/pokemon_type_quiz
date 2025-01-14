@@ -80,6 +80,27 @@ async function generateNameQuestion() {
   };
 }
 
+// Generate a single question based on Pokémon name with the shadow
+async function generateShadowQuestion() {
+  const allPokemon = await fetchPokemonData();
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
+  const details = await fetchPokemonDetails(pokemon.url);
+  const imageUrl = details.sprites.front_default;
+
+  const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
+
+  return {
+    question: `What is the name of this Pokémon?`,
+    options: options.sort(() => 0.5 - Math.random()),
+    answer: pokemon.name,
+    imageUrl: imageUrl,
+    typeIcons: null,
+    pokemonName: pokemon.name,
+    imageStyle: "filter: brightness(0);"
+  };
+}
+
 // Initialize quiz
 async function initQuiz(generateQuestionFunction) {
   score = 0;
@@ -103,6 +124,11 @@ async function loadQuestion(question) {
   );
   optionsContainer.innerHTML = "";
   imageElement.src = question.imageUrl;
+  if (question.imageStyle) {
+    imageElement.style = question.imageStyle;
+  } else {
+    imageElement.style = "";
+  }
 
   progressBar = document.getElementById("progress-bar");
   resetProgressBar();
@@ -165,7 +191,22 @@ function handleOptionClick(option, question) {
     if (option === question.answer) {
       score++;
       currentScoreElement.textContent = score;
-      const newQuestion = minigameId === 0 ? await generateTypeQuestion() : await generateNameQuestion();
+      let newQuestion;
+      switch (minigameId) {
+        case 0:{
+          newQuestion = await generateTypeQuestion();
+          break;
+        }
+        case 1:{
+          newQuestion = await generateNameQuestion();
+          break;
+        }
+        case 2:{
+          newQuestion = await generateShadowQuestion();
+          break;
+        }
+      }
+      
       loadQuestion(newQuestion);
     } else {
       showResults();
@@ -218,6 +259,11 @@ async function main() {
   document.getElementById("name-quiz-btn").addEventListener("click", () => {
     minigameId = 1;
     initQuiz(generateNameQuestion);
+  });
+
+  document.getElementById("shadow-quiz-btn").addEventListener("click", () => {
+    minigameId = 2;
+    initQuiz(generateShadowQuestion);
   });
 
   restartButton.addEventListener("click", async () => {
