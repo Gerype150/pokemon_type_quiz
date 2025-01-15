@@ -5,6 +5,20 @@ let timer;
 let progressBar;
 let minigameId = 21;
 
+document.addEventListener("DOMContentLoaded", () => {
+  const timestamp = new Date().getTime();
+  const cssLink = document.querySelector('link[rel="stylesheet"]');
+  const jsScript = document.querySelector('script[src="script.js"]');
+
+  if (cssLink) {
+    cssLink.href = `styles.css?v=${timestamp}`;
+  }
+
+  if (jsScript) {
+    jsScript.src = `script.js?v=${timestamp}`;
+  }
+});
+
 // Fetch Pokémon data
 async function fetchPokemonData() {
   const response = await fetch(apiUrl);
