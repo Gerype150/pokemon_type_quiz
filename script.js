@@ -2,7 +2,6 @@ const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
 const typeApiUrl = "https://pokeapi.co/api/v2/type";
 let score = 0;
 let timer;
-let progressBar;
 let minigameId = 21;
 
 // Fetch Pokémon data
@@ -54,6 +53,7 @@ async function generateTypeQuestion() {
     question: `What type is ${pokemon.name}?`,
     options: options.sort(() => 0.5 - Math.random()),
     answer: correctAnswer,
+    cryUrl: null,
     imageUrl: imageUrl,
     typeIcons: typeIcons,
     pokemonName: pokemon.name
@@ -74,7 +74,29 @@ async function generateNameQuestion() {
     question: `What is the name of this Pokémon?`,
     options: options.sort(() => 0.5 - Math.random()),
     answer: pokemon.name,
+    cryUrl: null,
     imageUrl: imageUrl,
+    typeIcons: null,
+    pokemonName: pokemon.name
+  };
+}
+
+// Generate a single question based on Pokémon name
+async function generateCryQuestion() {
+  const allPokemon = await fetchPokemonData();
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
+  const cryUrl = `https://play.pokemonshowdown.com/audio/cries/${pokemon.name.toLowerCase()}.mp3`;
+
+  const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
+
+  return {
+    question: `What is the name of this Pokémon?`,
+    options: options.sort(() => 0.5 - Math.random()),
+    answer: pokemon.name,
+    cryUrl: cryUrl,
+    imageUrl: null,
+    imageStyle: "none",
     typeIcons: null,
     pokemonName: pokemon.name
   };
@@ -94,6 +116,7 @@ async function generateShadowQuestion() {
     question: `What is the name of this Pokémon?`,
     options: options.sort(() => 0.5 - Math.random()),
     answer: pokemon.name,
+    cryUrl: null,
     imageUrl: imageUrl,
     typeIcons: null,
     pokemonName: pokemon.name,
@@ -123,15 +146,20 @@ async function loadQuestion(question) {
     (match) => `<span class="pokemon-name">${match.charAt(0).toUpperCase() + match.slice(1)}</span>`
   );
   optionsContainer.innerHTML = "";
-  imageElement.src = question.imageUrl;
-  if (question.imageStyle) {
+  if(minigameId != 3){
+    imageElement.src = question.imageUrl;
     imageElement.style = question.imageStyle;
-  } else {
-    imageElement.style = "";
-  }
+    imageElement.alt = "pokemonImage";
+    progressBarContainer.style.display = "block";
+    resetProgressBar();
+  }else{
 
-  progressBar = document.getElementById("progress-bar");
-  resetProgressBar();
+    progressBarContainer.style.display = "none";
+    imageElement.alt = "";
+    imageElement.src = "";
+    const audio = new Audio(question.cryUrl);
+    audio.play();
+  }
 
   question.options.forEach((option) => {
     const button = createOptionButton(option, question.typeIcons);
@@ -142,7 +170,9 @@ async function loadQuestion(question) {
   if (timer) {
     clearTimeout(timer);
   }
-  timer = setTimeout(() => handleTimeout(question), 5000);
+  if(minigameId != 3){
+    timer = setTimeout(() => handleTimeout(question), 5000);
+  }
 }
 
 function resetProgressBar() {
@@ -205,6 +235,10 @@ function handleOptionClick(option, question) {
           newQuestion = await generateShadowQuestion();
           break;
         }
+        case 3:{
+          newQuestion = await generateCryQuestion();
+          break;
+        }
       }
       
       loadQuestion(newQuestion);
@@ -248,6 +282,8 @@ const imageElement = document.getElementById("pokemon-image");
 const scoreElement = document.getElementById("score");
 const currentScoreElement = document.getElementById("current-score");
 const restartButton = document.getElementById("restart-btn");
+const progressBarContainer = document.getElementById("progress-bar-container");
+const progressBar = document.getElementById("progress-bar");
 
 // Initialize main function
 async function main() {
@@ -264,6 +300,10 @@ async function main() {
   document.getElementById("shadow-quiz-btn").addEventListener("click", () => {
     minigameId = 2;
     initQuiz(generateShadowQuestion);
+  });
+  document.getElementById("cry-quiz-btn").addEventListener("click", () => {
+    minigameId = 3;
+    initQuiz(generateCryQuestion);
   });
 
   restartButton.addEventListener("click", async () => {
