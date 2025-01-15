@@ -2,6 +2,7 @@ const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=1000";
 const typeApiUrl = "https://pokeapi.co/api/v2/type";
 let score = 0;
 let timer;
+let progressBar;
 let minigameId = 21;
 
 // Fetch Pokémon data
@@ -53,7 +54,6 @@ async function generateTypeQuestion() {
     question: `What type is ${pokemon.name}?`,
     options: options.sort(() => 0.5 - Math.random()),
     answer: correctAnswer,
-    cryUrl: null,
     imageUrl: imageUrl,
     typeIcons: typeIcons,
     pokemonName: pokemon.name
@@ -74,14 +74,34 @@ async function generateNameQuestion() {
     question: `What is the name of this Pokémon?`,
     options: options.sort(() => 0.5 - Math.random()),
     answer: pokemon.name,
-    cryUrl: null,
     imageUrl: imageUrl,
     typeIcons: null,
     pokemonName: pokemon.name
   };
 }
 
-// Generate a single question based on Pokémon name
+// Generate a single question based on Pokémon name with no brightness
+async function generateShadowQuestion() {
+  const allPokemon = await fetchPokemonData();
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
+  const details = await fetchPokemonDetails(pokemon.url);
+  const imageUrl = details.sprites.front_default;
+
+  const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
+
+  return {
+    question: `What is the name of this Pokémon?`,
+    options: options.sort(() => 0.5 - Math.random()),
+    answer: pokemon.name,
+    imageUrl: imageUrl,
+    typeIcons: null,
+    pokemonName: pokemon.name,
+    imageStyle: "filter: brightness(0);"
+  };
+}
+
+// Generate a single question based on Pokémon cry
 async function generateCryQuestion() {
   const allPokemon = await fetchPokemonData();
   const randomIndex = Math.floor(Math.random() * allPokemon.length);
@@ -91,12 +111,10 @@ async function generateCryQuestion() {
   const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
 
   return {
-    question: `What is the name of this Pokémon?`,
+    question: `What is the name of this Pokémon based on its cry?`,
     options: options.sort(() => 0.5 - Math.random()),
     answer: pokemon.name,
     cryUrl: cryUrl,
-    imageUrl: null,
-    imageStyle: "none",
     typeIcons: null,
     pokemonName: pokemon.name
   };
@@ -146,19 +164,19 @@ async function loadQuestion(question) {
     (match) => `<span class="pokemon-name">${match.charAt(0).toUpperCase() + match.slice(1)}</span>`
   );
   optionsContainer.innerHTML = "";
-  if(minigameId != 3){
-    imageElement.src = question.imageUrl;
-    imageElement.style = question.imageStyle;
-    imageElement.alt = "pokemonImage";
-    progressBarContainer.style.display = "block";
-    resetProgressBar();
-  }else{
 
-    progressBarContainer.style.display = "none";
-    imageElement.alt = "";
-    imageElement.src = "";
+  progressBar = document.getElementById("progress-bar");
+
+  if (question.cryUrl) {
     const audio = new Audio(question.cryUrl);
     audio.play();
+    progressBarContainer.style.display = "none";
+  } else {
+    progressBarContainer.style.display = "block";
+    imageElement.src = question.imageUrl;
+    imageElement.style = question.imageStyle || "";
+    imageElement.alt = "pokemonImage";
+    resetProgressBar();
   }
 
   question.options.forEach((option) => {
@@ -170,7 +188,8 @@ async function loadQuestion(question) {
   if (timer) {
     clearTimeout(timer);
   }
-  if(minigameId != 3){
+
+  if (!question.cryUrl) {
     timer = setTimeout(() => handleTimeout(question), 5000);
   }
 }
@@ -223,24 +242,19 @@ function handleOptionClick(option, question) {
       currentScoreElement.textContent = score;
       let newQuestion;
       switch (minigameId) {
-        case 0:{
+        case 0:
           newQuestion = await generateTypeQuestion();
           break;
-        }
-        case 1:{
+        case 1:
           newQuestion = await generateNameQuestion();
           break;
-        }
-        case 2:{
+        case 2:
           newQuestion = await generateShadowQuestion();
           break;
-        }
-        case 3:{
+        case 3:
           newQuestion = await generateCryQuestion();
           break;
-        }
       }
-      
       loadQuestion(newQuestion);
     } else {
       showResults();
@@ -283,7 +297,6 @@ const scoreElement = document.getElementById("score");
 const currentScoreElement = document.getElementById("current-score");
 const restartButton = document.getElementById("restart-btn");
 const progressBarContainer = document.getElementById("progress-bar-container");
-const progressBar = document.getElementById("progress-bar");
 
 // Initialize main function
 async function main() {
@@ -301,6 +314,7 @@ async function main() {
     minigameId = 2;
     initQuiz(generateShadowQuestion);
   });
+
   document.getElementById("cry-quiz-btn").addEventListener("click", () => {
     minigameId = 3;
     initQuiz(generateCryQuestion);
