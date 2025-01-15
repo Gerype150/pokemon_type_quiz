@@ -80,6 +80,46 @@ async function generateNameQuestion() {
   };
 }
 
+// Generate a single question based on Pokémon name with no brightness
+async function generateShadowQuestion() {
+  const allPokemon = await fetchPokemonData();
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
+  const details = await fetchPokemonDetails(pokemon.url);
+  const imageUrl = details.sprites.front_default;
+
+  const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
+
+  return {
+    question: `What is the name of this Pokémon?`,
+    options: options.sort(() => 0.5 - Math.random()),
+    answer: pokemon.name,
+    imageUrl: imageUrl,
+    typeIcons: null,
+    pokemonName: pokemon.name,
+    imageStyle: "filter: brightness(0);"
+  };
+}
+
+// Generate a single question based on Pokémon cry
+async function generateCryQuestion() {
+  const allPokemon = await fetchPokemonData();
+  const randomIndex = Math.floor(Math.random() * allPokemon.length);
+  const pokemon = allPokemon[randomIndex];
+  const cryUrl = `https://play.pokemonshowdown.com/audio/cries/${pokemon.name.toLowerCase()}.mp3`;
+
+  const options = [pokemon.name, ...allPokemon.filter(p => p.name !== pokemon.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name)];
+
+  return {
+    question: `What is the name of this Pokémon based on its cry?`,
+    options: options.sort(() => 0.5 - Math.random()),
+    answer: pokemon.name,
+    cryUrl: cryUrl,
+    typeIcons: null,
+    pokemonName: pokemon.name
+  };
+}
+
 // Generate a single question based on Pokémon name with the shadow
 async function generateShadowQuestion() {
   const allPokemon = await fetchPokemonData();
@@ -94,6 +134,7 @@ async function generateShadowQuestion() {
     question: `What is the name of this Pokémon?`,
     options: options.sort(() => 0.5 - Math.random()),
     answer: pokemon.name,
+    cryUrl: null,
     imageUrl: imageUrl,
     typeIcons: null,
     pokemonName: pokemon.name,
@@ -123,15 +164,20 @@ async function loadQuestion(question) {
     (match) => `<span class="pokemon-name">${match.charAt(0).toUpperCase() + match.slice(1)}</span>`
   );
   optionsContainer.innerHTML = "";
-  imageElement.src = question.imageUrl;
-  if (question.imageStyle) {
-    imageElement.style = question.imageStyle;
-  } else {
-    imageElement.style = "";
-  }
 
   progressBar = document.getElementById("progress-bar");
-  resetProgressBar();
+
+  if (question.cryUrl) {
+    const audio = new Audio(question.cryUrl);
+    audio.play();
+    progressBarContainer.style.display = "none";
+  } else {
+    progressBarContainer.style.display = "block";
+    imageElement.src = question.imageUrl;
+    imageElement.style = question.imageStyle || "";
+    imageElement.alt = "pokemonImage";
+    resetProgressBar();
+  }
 
   question.options.forEach((option) => {
     const button = createOptionButton(option, question.typeIcons);
@@ -142,7 +188,10 @@ async function loadQuestion(question) {
   if (timer) {
     clearTimeout(timer);
   }
-  timer = setTimeout(() => handleTimeout(question), 5000);
+
+  if (!question.cryUrl) {
+    timer = setTimeout(() => handleTimeout(question), 5000);
+  }
 }
 
 function resetProgressBar() {
@@ -193,20 +242,19 @@ function handleOptionClick(option, question) {
       currentScoreElement.textContent = score;
       let newQuestion;
       switch (minigameId) {
-        case 0:{
+        case 0:
           newQuestion = await generateTypeQuestion();
           break;
-        }
-        case 1:{
+        case 1:
           newQuestion = await generateNameQuestion();
           break;
-        }
-        case 2:{
+        case 2:
           newQuestion = await generateShadowQuestion();
           break;
-        }
+        case 3:
+          newQuestion = await generateCryQuestion();
+          break;
       }
-      
       loadQuestion(newQuestion);
     } else {
       showResults();
@@ -248,6 +296,7 @@ const imageElement = document.getElementById("pokemon-image");
 const scoreElement = document.getElementById("score");
 const currentScoreElement = document.getElementById("current-score");
 const restartButton = document.getElementById("restart-btn");
+const progressBarContainer = document.getElementById("progress-bar-container");
 
 // Initialize main function
 async function main() {
@@ -264,6 +313,11 @@ async function main() {
   document.getElementById("shadow-quiz-btn").addEventListener("click", () => {
     minigameId = 2;
     initQuiz(generateShadowQuestion);
+  });
+
+  document.getElementById("cry-quiz-btn").addEventListener("click", () => {
+    minigameId = 3;
+    initQuiz(generateCryQuestion);
   });
 
   restartButton.addEventListener("click", async () => {
