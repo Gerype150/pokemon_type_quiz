@@ -167,10 +167,12 @@ async function loadQuestion(question) {
 
   progressBar = document.getElementById("progress-bar");
 
-  if (question.cryUrl) {
+  if (minigameId == 3) {
     const audio = new Audio(question.cryUrl);
     audio.play();
     progressBarContainer.style.display = "none";
+    imageElement.src = "";
+    imageElement.alt = "";
   } else {
     progressBarContainer.style.display = "block";
     imageElement.src = question.imageUrl;
